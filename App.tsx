@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UploadedFile, ImageStyle, GenerationState } from './types';
 import { STYLE_OPTIONS } from './constants';
-import { generateCreativeImage, fileToBase64, refineImage } from './services/geminiService';
+import { generateCreativeImage, fileToBase64, refineImage, setApiKey, getApiKey } from './services/geminiService';
 import { Dropzone } from './components/Dropzone';
 import { Button } from './components/Button';
 import { Sparkles, Download, AlertCircle, RefreshCw, Key, ExternalLink, MessageSquarePlus, Wand2 } from 'lucide-react';
@@ -10,6 +10,7 @@ const App: React.FC = () => {
   // Authentication State
   const [hasApiKey, setHasApiKey] = useState(false);
   const [isKeyLoading, setIsKeyLoading] = useState(true);
+  const [apiKeyInput, setApiKeyInput] = useState('');
 
   // State for Inputs
   const [personImage, setPersonImage] = useState<UploadedFile | null>(null);
@@ -29,33 +30,17 @@ const App: React.FC = () => {
 
   // Check for API Key on mount
   useEffect(() => {
-    const checkKey = async () => {
-      try {
-        if (window.aistudio && window.aistudio.hasSelectedApiKey) {
-          const hasKey = await window.aistudio.hasSelectedApiKey();
-          setHasApiKey(hasKey);
-        } else {
-          // Fallback for environments where aistudio object might not be immediately available
-          setHasApiKey(true); 
-        }
-      } catch (e) {
-        console.error("Error checking API key:", e);
-      } finally {
-        setIsKeyLoading(false);
-      }
-    };
-    checkKey();
+    const existingKey = getApiKey();
+    if (existingKey) {
+      setHasApiKey(true);
+    }
+    setIsKeyLoading(false);
   }, []);
 
-  const handleSelectKey = async () => {
-    try {
-      if (window.aistudio && window.aistudio.openSelectKey) {
-        await window.aistudio.openSelectKey();
-        // Assume success after dialog closes (race condition mitigation)
-        setHasApiKey(true);
-      }
-    } catch (e) {
-      console.error("Error selecting key:", e);
+  const handleSubmitApiKey = () => {
+    if (apiKeyInput.trim()) {
+      setApiKey(apiKeyInput.trim());
+      setHasApiKey(true);
     }
   };
 
@@ -176,7 +161,7 @@ const App: React.FC = () => {
     return <div className="min-h-screen bg-surface-950 flex items-center justify-center text-slate-500">Loading...</div>;
   }
 
-  // API Key Selection Screen
+  // API Key Input Screen
   if (!hasApiKey) {
     return (
       <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center p-4">
@@ -185,23 +170,37 @@ const App: React.FC = () => {
             <Sparkles className="text-white w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Gemini ポートレートスタジオ</h1>
-          <p className="text-slate-400 mb-8">
-            Gemini 3 Proの高度な画像生成機能を使用するには、課金が有効なプロジェクトのAPIキーが必要です。
+          <p className="text-slate-400 mb-6">
+            Gemini APIキーを入力してください。
           </p>
-          
-          <Button onClick={handleSelectKey} className="w-full mb-6">
-            <Key className="w-5 h-5" />
-            APIキーを選択して開始
-          </Button>
-          
+
+          <div className="space-y-4 mb-6">
+            <input
+              type="password"
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder="Gemini APIキーを入力"
+              className="w-full bg-surface-950 border border-surface-700 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSubmitApiKey();
+                }
+              }}
+            />
+            <Button onClick={handleSubmitApiKey} className="w-full" disabled={!apiKeyInput.trim()}>
+              <Key className="w-5 h-5" />
+              開始する
+            </Button>
+          </div>
+
           <div className="text-xs text-slate-500 border-t border-surface-800 pt-4">
-            <a 
-              href="https://ai.google.dev/gemini-api/docs/billing" 
-              target="_blank" 
+            <a
+              href="https://aistudio.google.com/apikey"
+              target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 hover:text-blue-400 transition-colors"
             >
-              課金設定についてはこちら <ExternalLink size={12} />
+              APIキーの取得はこちら <ExternalLink size={12} />
             </a>
           </div>
         </div>
@@ -225,8 +224,12 @@ const App: React.FC = () => {
             <div className="text-xs font-mono text-slate-500 border border-surface-700 px-2 py-1 rounded bg-surface-900 hidden sm:block">
               Model: gemini-3-pro-image-preview
             </div>
-            <button 
-              onClick={() => setHasApiKey(false)} 
+            <button
+              onClick={() => {
+                setApiKey('');
+                setApiKeyInput('');
+                setHasApiKey(false);
+              }}
               className="text-xs text-slate-500 hover:text-white transition-colors"
               title="APIキーを変更"
             >

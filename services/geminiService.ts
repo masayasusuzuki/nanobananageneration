@@ -2,6 +2,17 @@ import { GoogleGenAI } from "@google/genai";
 import { MODEL_NAME } from '../constants';
 import { ImageStyle } from '../types';
 
+// API Key storage
+let currentApiKey: string | null = null;
+
+export const setApiKey = (key: string) => {
+  currentApiKey = key;
+};
+
+export const getApiKey = (): string | null => {
+  return currentApiKey || process.env.API_KEY || null;
+};
+
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -23,8 +34,11 @@ export const generateCreativeImage = async (
   userPrompt: string
 ): Promise<string> => {
   try {
-    // Initialize the client here to ensure we use the latest key from process.env.API_KEY
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。");
+    }
+    const ai = new GoogleGenAI({ apiKey });
 
     const parts: any[] = [];
 
@@ -88,7 +102,11 @@ export const refineImage = async (
   feedback: string
 ): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。");
+    }
+    const ai = new GoogleGenAI({ apiKey });
 
     // Ensure we have pure base64
     const base64Data = originalImageBase64.includes(',') 
