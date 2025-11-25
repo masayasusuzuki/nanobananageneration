@@ -99,7 +99,8 @@ export const generateCreativeImage = async (
 
 export const refineImage = async (
   originalImageBase64: string,
-  feedback: string
+  feedback: string,
+  referenceImageBase64?: string | null
 ): Promise<string> => {
   try {
     const apiKey = getApiKey();
@@ -109,26 +110,49 @@ export const refineImage = async (
     const ai = new GoogleGenAI({ apiKey });
 
     // Ensure we have pure base64
-    const base64Data = originalImageBase64.includes(',') 
-      ? originalImageBase64.split(',')[1] 
+    const base64Data = originalImageBase64.includes(',')
+      ? originalImageBase64.split(',')[1]
       : originalImageBase64;
 
-    const parts = [
+    const parts: any[] = [
       {
         inlineData: {
           mimeType: 'image/png',
           data: base64Data
         }
-      },
-      {
-        text: `This is a previously generated image. 
-        User Feedback for refinement: "${feedback}".
-        
-        Task: Re-generate the image incorporating the user's feedback.
-        Maintain the original subject identity and overall composition unless the feedback specifically asks to change them.
-        Ensure the output remains high quality.`
       }
     ];
+
+    // Add reference image if provided
+    if (referenceImageBase64) {
+      const refBase64Data = referenceImageBase64.includes(',')
+        ? referenceImageBase64.split(',')[1]
+        : referenceImageBase64;
+      parts.push({
+        inlineData: {
+          mimeType: 'image/png',
+          data: refBase64Data
+        }
+      });
+    }
+
+    let promptText = `This is a previously generated image.
+        User Feedback for refinement: "${feedback}".`;
+
+    if (referenceImageBase64) {
+      promptText += `
+
+        The second image is a REFERENCE IMAGE provided by the user.
+        Use this reference image to guide the modifications - it may show the desired style, colors, composition, or specific elements the user wants incorporated.`;
+    }
+
+    promptText += `
+
+        Task: Re-generate the image incorporating the user's feedback${referenceImageBase64 ? ' and using the reference image as guidance' : ''}.
+        Maintain the original subject identity and overall composition unless the feedback specifically asks to change them.
+        Ensure the output remains high quality.`;
+
+    parts.push({ text: promptText });
 
     const response = await ai.models.generateContent({
       model: MODEL_NAME,

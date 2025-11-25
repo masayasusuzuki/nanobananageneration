@@ -4,7 +4,7 @@ import { STYLE_OPTIONS } from './constants';
 import { generateCreativeImage, fileToBase64, refineImage, setApiKey, getApiKey } from './services/geminiService';
 import { Dropzone } from './components/Dropzone';
 import { Button } from './components/Button';
-import { Sparkles, Download, AlertCircle, RefreshCw, Key, ExternalLink, MessageSquarePlus, Wand2 } from 'lucide-react';
+import { Sparkles, Download, AlertCircle, RefreshCw, Key, ExternalLink, MessageSquarePlus, Wand2, ImagePlus, X } from 'lucide-react';
 
 const App: React.FC = () => {
   // Authentication State
@@ -20,6 +20,7 @@ const App: React.FC = () => {
   
   // Refinement State
   const [feedbackPrompt, setFeedbackPrompt] = useState<string>('');
+  const [feedbackImage, setFeedbackImage] = useState<UploadedFile | null>(null);
   
   // State for Process
   const [genState, setGenState] = useState<GenerationState>({
@@ -99,9 +100,23 @@ const App: React.FC = () => {
     }
   };
 
+  // Handler for feedback image
+  const handleFeedbackImageSelect = async (file: File) => {
+    try {
+      const base64 = await fileToBase64(file);
+      setFeedbackImage({
+        file,
+        previewUrl: URL.createObjectURL(file),
+        base64
+      });
+    } catch (e) {
+      console.error("Failed to read feedback image", e);
+    }
+  };
+
   // Refinement Handler
   const handleRefine = async () => {
-    if (!genState.resultImage || !feedbackPrompt.trim()) {
+    if (!genState.resultImage || (!feedbackPrompt.trim() && !feedbackImage)) {
       return;
     }
 
@@ -111,7 +126,8 @@ const App: React.FC = () => {
     try {
       const resultBase64 = await refineImage(
         previousImage,
-        feedbackPrompt
+        feedbackPrompt,
+        feedbackImage?.base64 || null
       );
 
       setGenState({
@@ -120,6 +136,7 @@ const App: React.FC = () => {
         error: null
       });
       setFeedbackPrompt(''); // Clear feedback after success
+      setFeedbackImage(null); // Clear feedback image after success
 
     } catch (error: any) {
       handleError(error);
@@ -374,7 +391,39 @@ const App: React.FC = () => {
                   <MessageSquarePlus size={14} />
                   生成結果へのフィードバック・修正
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-start">
+                  {/* Image upload button and preview */}
+                  <div className="flex-shrink-0">
+                    {feedbackImage ? (
+                      <div className="relative w-12 h-12">
+                        <img
+                          src={feedbackImage.previewUrl}
+                          alt="Reference"
+                          className="w-12 h-12 rounded-lg object-cover border border-surface-600"
+                        />
+                        <button
+                          onClick={() => setFeedbackImage(null)}
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white transition-colors"
+                          title="画像を削除"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="w-12 h-12 bg-surface-950 border border-surface-700 hover:border-surface-500 rounded-lg flex items-center justify-center cursor-pointer transition-colors" title="参照画像を添付">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFeedbackImageSelect(file);
+                          }}
+                        />
+                        <ImagePlus size={20} className="text-slate-500" />
+                      </label>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={feedbackPrompt}
@@ -388,10 +437,10 @@ const App: React.FC = () => {
                       }
                     }}
                   />
-                  <Button 
+                  <Button
                     onClick={handleRefine}
                     isLoading={genState.isLoading}
-                    disabled={!feedbackPrompt.trim()}
+                    disabled={!feedbackPrompt.trim() && !feedbackImage}
                     className="whitespace-nowrap px-6"
                     variant="secondary"
                   >
@@ -399,6 +448,11 @@ const App: React.FC = () => {
                     修正して再生成
                   </Button>
                 </div>
+                {feedbackImage && (
+                  <p className="text-xs text-slate-500 mt-2">
+                    参照画像が添付されています。この画像を参考に修正が行われます。
+                  </p>
+                )}
               </div>
             )}
           </div>
