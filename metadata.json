@@ -1,0 +1,5 @@
+{
+  "name": "Gemini ポートレートスタジオ",
+  "description": "Gemini 3 Proを使用して、被写体（人物）、構図、スタイルを組み合わせたプロフェッショナルな画像生成スタジオ。",
+  "requestFramePermissions": []
+}
