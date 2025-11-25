@@ -379,7 +379,7 @@ const App: React.FC = () => {
                     type="text"
                     value={feedbackPrompt}
                     onChange={(e) => setFeedbackPrompt(e.target.value)}
-                    placeholder="例: 背景をもっと暗くして、髪の色を明るく..."
+                    placeholder="例: 背景をもっと暗くして、髪の色を明るく... (Enterで送信)"
                     className="flex-1 bg-surface-950 border border-surface-700 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
