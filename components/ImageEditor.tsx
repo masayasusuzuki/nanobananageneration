@@ -98,9 +98,14 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ onApiError }) => {
       setShowRefinement(true); // Show refinement option after first edit
     } catch (err: any) {
       console.error('Edit error:', err);
-      setError(err.message || '画像の編集に失敗しました。');
-      if (err.message?.includes('API') || err.message?.includes('キー')) {
+      const errorMessage = err.message || '画像の編集に失敗しました。';
+      if (errorMessage.includes('429') || errorMessage.includes('rate limit') || errorMessage.includes('quota')) {
+        setError('APIのレート制限に達しました。しばらく待ってから再試行してください。');
+      } else if (errorMessage.includes('API') || errorMessage.includes('キー') || errorMessage.includes('403')) {
+        setError(errorMessage);
         onApiError?.();
+      } else {
+        setError(errorMessage);
       }
     } finally {
       setIsLoading(false);
@@ -162,9 +167,14 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ onApiError }) => {
       setReferenceImage(null);
     } catch (err: any) {
       console.error('Refinement error:', err);
-      setError(err.message || '画像の調整に失敗しました。');
-      if (err.message?.includes('API') || err.message?.includes('キー')) {
+      const errorMessage = err.message || '画像の調整に失敗しました。';
+      if (errorMessage.includes('429') || errorMessage.includes('rate limit') || errorMessage.includes('quota')) {
+        setError('APIのレート制限に達しました。しばらく待ってから再試行してください。');
+      } else if (errorMessage.includes('API') || errorMessage.includes('キー') || errorMessage.includes('403')) {
+        setError(errorMessage);
         onApiError?.();
+      } else {
+        setError(errorMessage);
       }
     } finally {
       setIsLoading(false);

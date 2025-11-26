@@ -129,7 +129,13 @@ const PortraitGenerator: React.FC<PortraitGeneratorProps> = ({ onApiError }) => 
 
   const handleError = (error: any) => {
     const errorMessage = error.message || "予期せぬエラーが発生しました。";
-    if (errorMessage.includes("Requested entity was not found") || errorMessage.includes("403") || errorMessage.includes("Permission denied")) {
+    if (errorMessage.includes("429") || errorMessage.includes("rate limit") || errorMessage.includes("quota")) {
+      setGenState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: "APIのレート制限に達しました。しばらく待ってから再試行してください。（無料プランは1分あたりの制限があります）"
+      }));
+    } else if (errorMessage.includes("Requested entity was not found") || errorMessage.includes("403") || errorMessage.includes("Permission denied") || errorMessage.includes("API key not valid")) {
       onApiError();
       setGenState(prev => ({
         ...prev,

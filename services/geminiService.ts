@@ -3,14 +3,18 @@ import { MODEL_NAME } from '../constants';
 import { ImageStyle, LPSection, LPTone, LPAspectRatio } from '../types';
 
 // API Key storage
-let currentApiKey: string | null = null;
+const API_KEY_STORAGE_KEY = 'gemini_api_key';
 
 export const setApiKey = (key: string) => {
-  currentApiKey = key;
+  if (key) {
+    localStorage.setItem(API_KEY_STORAGE_KEY, key);
+  } else {
+    localStorage.removeItem(API_KEY_STORAGE_KEY);
+  }
 };
 
 export const getApiKey = (): string | null => {
-  return currentApiKey || process.env.API_KEY || null;
+  return localStorage.getItem(API_KEY_STORAGE_KEY) || process.env.API_KEY || null;
 };
 
 export const fileToBase64 = (file: File): Promise<string> => {
