@@ -3,9 +3,10 @@ import { setApiKey, getApiKey } from './services/geminiService';
 import { Button } from './components/Button';
 import PortraitGenerator from './components/PortraitGenerator';
 import LPGenerator from './components/LPGenerator';
-import { Sparkles, Key, ExternalLink, Layout, Image } from 'lucide-react';
+import ImageEditor from './components/ImageEditor';
+import { Sparkles, Key, ExternalLink, Layout, Image, Sliders } from 'lucide-react';
 
-type TabType = 'portrait' | 'lp';
+type TabType = 'portrait' | 'lp' | 'editor';
 
 const App: React.FC = () => {
   // Authentication State
@@ -133,6 +134,18 @@ const App: React.FC = () => {
                 <Layout size={16} />
                 LP制作
               </button>
+              <button
+                onClick={() => setActiveTab('editor')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200
+                  ${activeTab === 'editor'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
+                    : 'text-slate-400 hover:text-white hover:bg-surface-800'}
+                `}
+              >
+                <Sliders size={16} />
+                画像編集
+              </button>
             </nav>
           </div>
 
@@ -157,6 +170,9 @@ const App: React.FC = () => {
       )}
       {activeTab === 'lp' && (
         <LPGenerator />
+      )}
+      {activeTab === 'editor' && (
+        <ImageEditor onApiError={handleApiError} />
       )}
     </div>
   );

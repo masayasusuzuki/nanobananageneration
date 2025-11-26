@@ -401,6 +401,108 @@ Ensure the output remains a high-quality web design mockup.`;
   }
 };
 
+// Image Edit/Adjustment
+export const editImage = async (
+  originalImageBase64: string,
+  editPrompt: string,
+  originalWidth: number,
+  originalHeight: number,
+  referenceImageBase64?: string | null
+): Promise<string> => {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。");
+    }
+    const ai = new GoogleGenAI({ apiKey });
+
+    const base64Data = originalImageBase64.includes(',')
+      ? originalImageBase64.split(',')[1]
+      : originalImageBase64;
+
+    const parts: any[] = [
+      {
+        inlineData: {
+          mimeType: 'image/png',
+          data: base64Data
+        }
+      }
+    ];
+
+    // Add reference image if provided
+    if (referenceImageBase64) {
+      const refBase64Data = referenceImageBase64.includes(',')
+        ? referenceImageBase64.split(',')[1]
+        : referenceImageBase64;
+      parts.push({
+        inlineData: {
+          mimeType: 'image/png',
+          data: refBase64Data
+        }
+      });
+    }
+
+    let promptText = `This is an image that needs to be edited/adjusted.
+
+`;
+
+    if (referenceImageBase64) {
+      promptText += `The second image is a REFERENCE IMAGE provided by the user.
+Use this reference image to guide the modifications - it may show the desired style, colors, composition, or specific elements the user wants incorporated.
+
+`;
+    }
+
+    promptText += `User's Edit Instructions: "${editPrompt}"
+
+Task: Apply the requested edits/adjustments to the image${referenceImageBase64 ? ' using the reference image as guidance' : ''}.
+
+IMPORTANT GUIDELINES:
+- Follow the user's instructions carefully
+- Maintain the overall composition and subject unless asked to change them
+- Apply edits naturally and professionally
+- Keep the image quality high
+- Common adjustments include: color correction, lighting, retouching, style changes, object removal/addition, background changes, etc.
+- Output a high-quality edited image`;
+
+    parts.push({ text: promptText });
+
+    // Determine aspect ratio from original dimensions
+    const ratio = originalWidth / originalHeight;
+    let aspectRatio: string;
+    if (ratio > 1.5) {
+      aspectRatio = '16:9';
+    } else if (ratio < 0.7) {
+      aspectRatio = '9:16';
+    } else if (ratio > 1.2) {
+      aspectRatio = '4:3';
+    } else if (ratio < 0.85) {
+      aspectRatio = '3:4';
+    } else {
+      aspectRatio = '1:1';
+    }
+
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: {
+        parts: parts
+      },
+      config: {
+        imageConfig: {
+          imageSize: '1K',
+          aspectRatio: aspectRatio,
+        }
+      }
+    });
+
+    return processResponse(response);
+
+  } catch (error: any) {
+    console.error("Gemini Image Edit Error:", error);
+    throw new Error(error.message || "Failed to edit image.");
+  }
+};
+
 // Helper to extract image from response
 const processResponse = (response: any): string => {
   const candidates = response.candidates;
