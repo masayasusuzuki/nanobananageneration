@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { UploadedFile, LPSection, LPTone, LPGenerationState } from '../types';
-import { LP_SECTION_OPTIONS, LP_TONE_OPTIONS } from '../constants';
+import { UploadedFile, LPSection, LPTone, LPAspectRatio, LPGenerationState } from '../types';
+import { LP_SECTION_OPTIONS, LP_TONE_OPTIONS, LP_ASPECT_RATIO_OPTIONS } from '../constants';
 import { generateLPSection, refineLPSection, fileToBase64 } from '../services/geminiService';
 import { Dropzone } from './Dropzone';
 import { Button } from './Button';
-import { Sparkles, Download, AlertCircle, MessageSquarePlus, Wand2, ImagePlus, X, Layout, ChevronDown, Layers } from 'lucide-react';
+import { Sparkles, Download, AlertCircle, MessageSquarePlus, Wand2, ImagePlus, X, Layout, ChevronDown, Layers, RatioIcon } from 'lucide-react';
 
 const LPGenerator: React.FC = () => {
-  // Section & Tone
+  // Section & Tone & Aspect Ratio
   const [section, setSection] = useState<LPSection>(LPSection.HERO);
   const [tone, setTone] = useState<LPTone>(LPTone.PROFESSIONAL);
+  const [aspectRatio, setAspectRatio] = useState<LPAspectRatio>(LPAspectRatio.WIDE);
 
   // Existing Blocks for consistency (2 slots)
   const [existingBlocks, setExistingBlocks] = useState<(UploadedFile | null)[]>([null, null]);
@@ -120,7 +121,8 @@ const LPGenerator: React.FC = () => {
         toneImage?.base64 || null,
         contentText,
         additionalPrompt,
-        existingBlockBase64s
+        existingBlockBase64s,
+        aspectRatio
       );
 
       setGenState({
@@ -208,9 +210,28 @@ const LPGenerator: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Tone Selection */}
+          {/* 2. Aspect Ratio Selection (Dropdown) */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">② トンマナ（デザインテイスト）</label>
+            <label className="text-sm font-medium text-slate-300">② 出力サイズ</label>
+            <div className="relative">
+              <select
+                value={aspectRatio}
+                onChange={(e) => setAspectRatio(e.target.value as LPAspectRatio)}
+                className="w-full bg-surface-900 border border-surface-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none cursor-pointer"
+              >
+                {LP_ASPECT_RATIO_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label} - {opt.description}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* 3. Tone Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300">③ トンマナ（デザインテイスト）</label>
             <div className="grid grid-cols-2 gap-2">
               {LP_TONE_OPTIONS.map((opt) => (
                 <button
@@ -232,11 +253,11 @@ const LPGenerator: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Existing Blocks for Consistency */}
+          {/* 4. Existing Blocks for Consistency */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
               <Layers size={14} className="text-blue-400" />
-              ③ 既存ブロック（トンマナ統一用）
+              ④ 既存ブロック（トンマナ統一用）
             </label>
             <p className="text-xs text-slate-500 -mt-1">同じLPの他セクションをインポートしてデザインを統一</p>
             <div className="grid grid-cols-2 gap-2">
@@ -254,9 +275,9 @@ const LPGenerator: React.FC = () => {
             </div>
           </div>
 
-          {/* 4. Tone Reference Image */}
+          {/* 5. Tone Reference Image */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">④ トンマナ参照画像（任意）</label>
+            <label className="text-sm font-medium text-slate-300">⑤ トンマナ参照画像（任意）</label>
             <Dropzone
               label="参照デザイン"
               subLabel="色味・雰囲気の参考"
@@ -267,9 +288,9 @@ const LPGenerator: React.FC = () => {
             />
           </div>
 
-          {/* 5. Material Images */}
+          {/* 6. Material Images */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">⑤ 素材画像（最大3枚）</label>
+            <label className="text-sm font-medium text-slate-300">⑥ 素材画像（最大3枚）</label>
             <div className="grid grid-cols-3 gap-2">
               {materialImages.map((img, index) => (
                 <Dropzone
@@ -285,9 +306,9 @@ const LPGenerator: React.FC = () => {
             </div>
           </div>
 
-          {/* 6. Content Text */}
+          {/* 7. Content Text */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">⑥ LPに入れるテキスト情報</label>
+            <label className="text-sm font-medium text-slate-300">⑦ LPに入れるテキスト情報</label>
             <textarea
               value={contentText}
               onChange={(e) => setContentText(e.target.value)}
@@ -296,9 +317,9 @@ const LPGenerator: React.FC = () => {
             />
           </div>
 
-          {/* 7. Additional Prompt */}
+          {/* 8. Additional Prompt */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">⑦ 追加の指示（任意）</label>
+            <label className="text-sm font-medium text-slate-300">⑧ 追加の指示（任意）</label>
             <textarea
               value={additionalPrompt}
               onChange={(e) => setAdditionalPrompt(e.target.value)}

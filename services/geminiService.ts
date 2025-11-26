@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { MODEL_NAME } from '../constants';
-import { ImageStyle, LPSection, LPTone } from '../types';
+import { ImageStyle, LPSection, LPTone, LPAspectRatio } from '../types';
 
 // API Key storage
 let currentApiKey: string | null = null;
@@ -183,7 +183,8 @@ export const generateLPSection = async (
   toneReferenceImage: string | null,
   contentText: string,
   additionalPrompt: string,
-  existingBlocks: (string | null)[] = []
+  existingBlocks: (string | null)[] = [],
+  aspectRatio: LPAspectRatio = LPAspectRatio.WIDE
 ): Promise<string> => {
   try {
     const apiKey = getApiKey();
@@ -311,7 +312,7 @@ IMPORTANT GUIDELINES:
       config: {
         imageConfig: {
           imageSize: '1K',
-          aspectRatio: '16:9',
+          aspectRatio: aspectRatio,
         }
       }
     });

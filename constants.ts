@@ -1,4 +1,4 @@
-import { ImageStyle, LPSection, LPTone } from './types';
+import { ImageStyle, LPSection, LPTone, LPAspectRatio } from './types';
 
 export const STYLE_OPTIONS = [
   { id: ImageStyle.REALISTIC, label: 'リアル / 写真', description: '写実的な写真品質' },
@@ -38,4 +38,11 @@ export const LP_TONE_OPTIONS = [
   { id: LPTone.PLAYFUL, label: 'ポップ・遊び心', description: 'カラフルで楽しい印象' },
   { id: LPTone.MINIMAL, label: 'ミニマル', description: 'シンプルで洗練された' },
   { id: LPTone.BOLD, label: 'ボールド', description: '大胆でインパクト重視' },
+];
+
+// LP Aspect Ratio Options
+export const LP_ASPECT_RATIO_OPTIONS = [
+  { id: LPAspectRatio.WIDE, label: 'ワイド (16:9)', description: 'ヒーロー・ファーストビュー向け' },
+  { id: LPAspectRatio.STANDARD, label: 'スタンダード (4:3)', description: '汎用的なセクション向け' },
+  { id: LPAspectRatio.VERTICAL, label: '縦長 (9:16)', description: 'スマホLP・縦スクロール向け' },
 ];

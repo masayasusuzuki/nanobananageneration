@@ -35,6 +35,12 @@ export enum LPTone {
   BOLD = 'bold',
 }
 
+export enum LPAspectRatio {
+  WIDE = '16:9',
+  STANDARD = '4:3',
+  VERTICAL = '9:16',
+}
+
 export interface LPGenerationState {
   isLoading: boolean;
   resultImage: string | null;
