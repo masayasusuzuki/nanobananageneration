@@ -41,6 +41,36 @@ export enum LPAspectRatio {
   VERTICAL = '9:16',
 }
 
+// Style Change Types
+export enum StyleChangeType {
+  ANIME = 'anime',
+  CG = 'cg',
+  HAND_DRAWN = 'hand_drawn',
+  WHITEBOARD = 'whiteboard',
+  REALISTIC = 'realistic',
+  WATERCOLOR = 'watercolor',
+  PIXEL_ART = 'pixel_art',
+  OIL_PAINTING = 'oil_painting',
+}
+
+export enum StyleChangeAspectRatio {
+  ORIGINAL = 'original',
+  WIDE = '16:9',
+  STANDARD = '4:3',
+  SQUARE = '1:1',
+  VERTICAL = '9:16',
+  PORTRAIT = '3:4',
+}
+
+// Image Generation Types
+export enum ImageGenAspectRatio {
+  WIDE = '16:9',
+  STANDARD = '4:3',
+  SQUARE = '1:1',
+  VERTICAL = '9:16',
+  PORTRAIT = '3:4',
+}
+
 export interface LPGenerationState {
   isLoading: boolean;
   resultImage: string | null;

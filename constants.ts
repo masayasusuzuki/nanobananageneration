@@ -1,4 +1,4 @@
-import { ImageStyle, LPSection, LPTone, LPAspectRatio } from './types';
+import { ImageStyle, LPSection, LPTone, LPAspectRatio, StyleChangeType, StyleChangeAspectRatio, ImageGenAspectRatio } from './types';
 
 export const STYLE_OPTIONS = [
   { id: ImageStyle.REALISTIC, label: 'リアル / 写真', description: '写実的な写真品質' },
@@ -45,4 +45,35 @@ export const LP_ASPECT_RATIO_OPTIONS = [
   { id: LPAspectRatio.WIDE, label: 'ワイド (16:9)', description: 'ヒーロー・ファーストビュー向け' },
   { id: LPAspectRatio.STANDARD, label: 'スタンダード (4:3)', description: '汎用的なセクション向け' },
   { id: LPAspectRatio.VERTICAL, label: '縦長 (9:16)', description: 'スマホLP・縦スクロール向け' },
+];
+
+// Style Change Options
+export const STYLE_CHANGE_OPTIONS = [
+  { id: StyleChangeType.ANIME, label: 'アニメ風', description: '日本のアニメスタイルに変換' },
+  { id: StyleChangeType.CG, label: 'CG風', description: '3DCGのようなレンダリング風に変換' },
+  { id: StyleChangeType.HAND_DRAWN, label: '手書きイラスト風', description: '手描きのイラストタッチに変換' },
+  { id: StyleChangeType.WHITEBOARD, label: 'ホワイトボード風', description: 'ホワイトボードに描いたようなスケッチ風' },
+  { id: StyleChangeType.REALISTIC, label: '実写風', description: 'フォトリアリスティックな写真風に変換' },
+  { id: StyleChangeType.WATERCOLOR, label: '水彩画風', description: '水彩絵の具で描いたような柔らかいタッチ' },
+  { id: StyleChangeType.PIXEL_ART, label: 'ピクセルアート風', description: 'レトロゲーム風のドット絵に変換' },
+  { id: StyleChangeType.OIL_PAINTING, label: '油絵風', description: 'クラシックな油絵の質感に変換' },
+];
+
+// Style Change Aspect Ratio Options
+export const STYLE_CHANGE_ASPECT_RATIO_OPTIONS = [
+  { id: StyleChangeAspectRatio.ORIGINAL, label: 'オリジナル', description: '元画像のアスペクト比を維持' },
+  { id: StyleChangeAspectRatio.WIDE, label: 'ワイド (16:9)', description: '横長のワイドフォーマット' },
+  { id: StyleChangeAspectRatio.STANDARD, label: 'スタンダード (4:3)', description: '標準的な横長フォーマット' },
+  { id: StyleChangeAspectRatio.SQUARE, label: '正方形 (1:1)', description: 'SNS投稿に最適' },
+  { id: StyleChangeAspectRatio.VERTICAL, label: '縦長 (9:16)', description: 'スマホ向け縦長フォーマット' },
+  { id: StyleChangeAspectRatio.PORTRAIT, label: 'ポートレート (3:4)', description: 'ポートレート向け縦長' },
+];
+
+// Image Generation Aspect Ratio Options
+export const IMAGE_GEN_ASPECT_RATIO_OPTIONS = [
+  { id: ImageGenAspectRatio.WIDE, label: 'ワイド (16:9)', description: '横長のワイドフォーマット' },
+  { id: ImageGenAspectRatio.STANDARD, label: 'スタンダード (4:3)', description: '標準的な横長フォーマット' },
+  { id: ImageGenAspectRatio.SQUARE, label: '正方形 (1:1)', description: 'SNS投稿に最適' },
+  { id: ImageGenAspectRatio.VERTICAL, label: '縦長 (9:16)', description: 'スマホ向け縦長フォーマット' },
+  { id: ImageGenAspectRatio.PORTRAIT, label: 'ポートレート (3:4)', description: 'ポートレート向け縦長' },
 ];

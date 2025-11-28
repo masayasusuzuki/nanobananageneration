@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { MODEL_NAME } from '../constants';
-import { ImageStyle, LPSection, LPTone, LPAspectRatio } from '../types';
+import { ImageStyle, LPSection, LPTone, LPAspectRatio, StyleChangeType, StyleChangeAspectRatio, ImageGenAspectRatio } from '../types';
 
 // API Key storage
 const API_KEY_STORAGE_KEY = 'gemini_api_key';
@@ -504,6 +504,332 @@ IMPORTANT GUIDELINES:
   } catch (error: any) {
     console.error("Gemini Image Edit Error:", error);
     throw new Error(error.message || "Failed to edit image.");
+  }
+};
+
+// Style Change Image Generation
+export const styleChangeImage = async (
+  originalImageBase64: string,
+  styleType: StyleChangeType,
+  userPrompt: string,
+  aspectRatio: StyleChangeAspectRatio,
+  originalWidth: number,
+  originalHeight: number
+): Promise<string> => {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。");
+    }
+    const ai = new GoogleGenAI({ apiKey });
+
+    const base64Data = originalImageBase64.includes(',')
+      ? originalImageBase64.split(',')[1]
+      : originalImageBase64;
+
+    const parts: any[] = [
+      {
+        inlineData: {
+          mimeType: 'image/png',
+          data: base64Data
+        }
+      }
+    ];
+
+    const styleDescriptions: Record<StyleChangeType, string> = {
+      [StyleChangeType.ANIME]: 'Japanese anime style with clean lines, vibrant colors, and characteristic anime aesthetics. Maintain expressive eyes and stylized features typical of anime art.',
+      [StyleChangeType.CG]: '3D CGI rendering style with smooth surfaces, realistic lighting, and digital polish. Make it look like a high-quality 3D rendered image.',
+      [StyleChangeType.HAND_DRAWN]: 'Hand-drawn illustration style with visible pencil/pen strokes, artistic imperfections, and a personal artistic touch. Make it look genuinely hand-sketched.',
+      [StyleChangeType.WHITEBOARD]: 'Whiteboard sketch style with black marker lines on white background, simple and clean diagram-like appearance with minimal shading.',
+      [StyleChangeType.REALISTIC]: 'Photorealistic style with natural lighting, accurate proportions, and lifelike details. Transform to look like a professional photograph.',
+      [StyleChangeType.WATERCOLOR]: 'Watercolor painting style with soft edges, color bleeding, and the characteristic translucent quality of watercolor paints.',
+      [StyleChangeType.PIXEL_ART]: 'Retro pixel art style with visible pixels, limited color palette, and the nostalgic look of classic video games.',
+      [StyleChangeType.OIL_PAINTING]: 'Classical oil painting style with visible brushstrokes, rich textures, and the depth typical of traditional oil paintings.',
+    };
+
+    let promptText = `Transform this image into a ${styleDescriptions[styleType]}
+
+IMPORTANT INSTRUCTIONS:
+- Maintain the core composition and subject of the original image
+- Apply the style transformation consistently across the entire image
+- Preserve the key elements and recognizable features of the original
+- Ensure high quality output with attention to detail`;
+
+    if (userPrompt.trim()) {
+      promptText += `
+
+Additional user instructions: ${userPrompt}`;
+    }
+
+    parts.push({ text: promptText });
+
+    // Determine aspect ratio
+    let outputAspectRatio: string;
+    if (aspectRatio === StyleChangeAspectRatio.ORIGINAL) {
+      const ratio = originalWidth / originalHeight;
+      if (ratio > 1.5) {
+        outputAspectRatio = '16:9';
+      } else if (ratio < 0.7) {
+        outputAspectRatio = '9:16';
+      } else if (ratio > 1.2) {
+        outputAspectRatio = '4:3';
+      } else if (ratio < 0.85) {
+        outputAspectRatio = '3:4';
+      } else {
+        outputAspectRatio = '1:1';
+      }
+    } else {
+      outputAspectRatio = aspectRatio;
+    }
+
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: {
+        parts: parts
+      },
+      config: {
+        imageConfig: {
+          imageSize: '1K',
+          aspectRatio: outputAspectRatio,
+        }
+      }
+    });
+
+    return processResponse(response);
+
+  } catch (error: any) {
+    console.error("Gemini Style Change Error:", error);
+    throw new Error(error.message || "Failed to change image style.");
+  }
+};
+
+// Style Change Refinement
+export const refineStyleChange = async (
+  originalImageBase64: string,
+  feedback: string,
+  referenceImageBase64?: string | null,
+  aspectRatio?: string
+): Promise<string> => {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。");
+    }
+    const ai = new GoogleGenAI({ apiKey });
+
+    const base64Data = originalImageBase64.includes(',')
+      ? originalImageBase64.split(',')[1]
+      : originalImageBase64;
+
+    const parts: any[] = [
+      {
+        inlineData: {
+          mimeType: 'image/png',
+          data: base64Data
+        }
+      }
+    ];
+
+    if (referenceImageBase64) {
+      const refBase64Data = referenceImageBase64.includes(',')
+        ? referenceImageBase64.split(',')[1]
+        : referenceImageBase64;
+      parts.push({
+        inlineData: {
+          mimeType: 'image/png',
+          data: refBase64Data
+        }
+      });
+    }
+
+    let promptText = `This is a previously generated style-changed image.
+User Feedback for refinement: "${feedback}".`;
+
+    if (referenceImageBase64) {
+      promptText += `
+
+The second image is a REFERENCE IMAGE. Use this to guide the style modifications.`;
+    }
+
+    promptText += `
+
+Task: Re-generate the image incorporating the user's feedback.
+Maintain the overall style and composition unless the feedback specifically asks to change them.
+Ensure the output remains high quality.`;
+
+    parts.push({ text: promptText });
+
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: {
+        parts: parts
+      },
+      config: {
+        imageConfig: {
+          imageSize: '1K',
+          aspectRatio: aspectRatio || '16:9',
+        }
+      }
+    });
+
+    return processResponse(response);
+
+  } catch (error: any) {
+    console.error("Gemini Style Refinement Error:", error);
+    throw new Error(error.message || "Failed to refine styled image.");
+  }
+};
+
+// New Image Generation from Prompt and Reference Images
+export const generateNewImage = async (
+  prompt: string,
+  referenceImages: string[],
+  aspectRatio: ImageGenAspectRatio
+): Promise<string> => {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。");
+    }
+    const ai = new GoogleGenAI({ apiKey });
+
+    const parts: any[] = [];
+
+    // Add reference images if provided
+    if (referenceImages.length > 0) {
+      referenceImages.forEach((img, index) => {
+        const base64Data = img.includes(',') ? img.split(',')[1] : img;
+        parts.push({
+          inlineData: {
+            mimeType: 'image/png',
+            data: base64Data
+          }
+        });
+      });
+    }
+
+    let promptText = `Generate a high-quality image based on the following prompt:
+
+"${prompt}"
+
+`;
+
+    if (referenceImages.length > 0) {
+      promptText += `REFERENCE IMAGES:
+${referenceImages.length} reference image(s) have been provided. Use these as visual guidance for:
+- Style and artistic direction
+- Color palette and mood
+- Composition ideas
+- Subject matter reference
+
+Incorporate elements from the reference images while creating a new, original composition based on the prompt.
+
+`;
+    }
+
+    promptText += `IMPORTANT GUIDELINES:
+- Create a high-quality, visually appealing image
+- Follow the prompt instructions carefully
+- Ensure the output is coherent and well-composed
+- Pay attention to lighting, details, and overall aesthetics`;
+
+    parts.push({ text: promptText });
+
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: {
+        parts: parts
+      },
+      config: {
+        imageConfig: {
+          imageSize: '1K',
+          aspectRatio: aspectRatio,
+        }
+      }
+    });
+
+    return processResponse(response);
+
+  } catch (error: any) {
+    console.error("Gemini Image Generation Error:", error);
+    throw new Error(error.message || "Failed to generate image.");
+  }
+};
+
+// Refine Generated Image
+export const refineGeneratedImage = async (
+  originalImageBase64: string,
+  feedback: string,
+  referenceImageBase64?: string | null,
+  aspectRatio?: string
+): Promise<string> => {
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("APIキーが設定されていません。");
+    }
+    const ai = new GoogleGenAI({ apiKey });
+
+    const base64Data = originalImageBase64.includes(',')
+      ? originalImageBase64.split(',')[1]
+      : originalImageBase64;
+
+    const parts: any[] = [
+      {
+        inlineData: {
+          mimeType: 'image/png',
+          data: base64Data
+        }
+      }
+    ];
+
+    if (referenceImageBase64) {
+      const refBase64Data = referenceImageBase64.includes(',')
+        ? referenceImageBase64.split(',')[1]
+        : referenceImageBase64;
+      parts.push({
+        inlineData: {
+          mimeType: 'image/png',
+          data: refBase64Data
+        }
+      });
+    }
+
+    let promptText = `This is a previously generated image.
+User Feedback for refinement: "${feedback}".`;
+
+    if (referenceImageBase64) {
+      promptText += `
+
+The second image is a REFERENCE IMAGE. Use this to guide the modifications - it may show the desired style, colors, composition, or specific elements to incorporate.`;
+    }
+
+    promptText += `
+
+Task: Re-generate the image incorporating the user's feedback.
+Maintain the core composition and subject unless the feedback specifically asks to change them.
+Ensure the output remains high quality.`;
+
+    parts.push({ text: promptText });
+
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: {
+        parts: parts
+      },
+      config: {
+        imageConfig: {
+          imageSize: '1K',
+          aspectRatio: aspectRatio || '16:9',
+        }
+      }
+    });
+
+    return processResponse(response);
+
+  } catch (error: any) {
+    console.error("Gemini Image Refinement Error:", error);
+    throw new Error(error.message || "Failed to refine image.");
   }
 };
 

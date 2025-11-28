@@ -4,9 +4,11 @@ import { Button } from './components/Button';
 import PortraitGenerator from './components/PortraitGenerator';
 import LPGenerator from './components/LPGenerator';
 import ImageEditor from './components/ImageEditor';
-import { Sparkles, Key, ExternalLink, Layout, Image, Sliders } from 'lucide-react';
+import StyleChanger from './components/StyleChanger';
+import ImageGenerator from './components/ImageGenerator';
+import { Sparkles, Key, ExternalLink, Layout, Image, Sliders, Palette, Wand2 } from 'lucide-react';
 
-type TabType = 'portrait' | 'lp' | 'editor';
+type TabType = 'portrait' | 'lp' | 'editor' | 'style' | 'generate';
 
 const App: React.FC = () => {
   // Authentication State
@@ -146,6 +148,30 @@ const App: React.FC = () => {
                 <Sliders size={16} />
                 画像編集
               </button>
+              <button
+                onClick={() => setActiveTab('style')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200
+                  ${activeTab === 'style'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
+                    : 'text-slate-400 hover:text-white hover:bg-surface-800'}
+                `}
+              >
+                <Palette size={16} />
+                スタイル変換
+              </button>
+              <button
+                onClick={() => setActiveTab('generate')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200
+                  ${activeTab === 'generate'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
+                    : 'text-slate-400 hover:text-white hover:bg-surface-800'}
+                `}
+              >
+                <Wand2 size={16} />
+                画像生成
+              </button>
             </nav>
           </div>
 
@@ -173,6 +199,12 @@ const App: React.FC = () => {
       )}
       {activeTab === 'editor' && (
         <ImageEditor onApiError={handleApiError} />
+      )}
+      {activeTab === 'style' && (
+        <StyleChanger onApiError={handleApiError} />
+      )}
+      {activeTab === 'generate' && (
+        <ImageGenerator onApiError={handleApiError} />
       )}
     </div>
   );
