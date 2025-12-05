@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { MODEL_NAME } from '../constants';
-import { ImageStyle, LPSection, LPTone, LPAspectRatio, StyleChangeType, StyleChangeAspectRatio, ImageGenAspectRatio } from '../types';
+import { ImageStyle, LPSection, LPTone, LPAspectRatio, StyleChangeType, StyleChangeAspectRatio, ImageGenAspectRatio, PortraitAspectRatio, ImageEditorAspectRatio } from '../types';
 
 // API Key storage
 const API_KEY_STORAGE_KEY = 'gemini_api_key';
@@ -35,7 +35,8 @@ export const generateCreativeImage = async (
   personImageBase64: string | null,
   backgroundImageBase64: string | null,
   style: ImageStyle,
-  userPrompt: string
+  userPrompt: string,
+  aspectRatio: PortraitAspectRatio = PortraitAspectRatio.WIDE
 ): Promise<string> => {
   try {
     const apiKey = getApiKey();
@@ -88,7 +89,7 @@ export const generateCreativeImage = async (
       config: {
         imageConfig: {
           imageSize: '1K',
-          aspectRatio: '16:9', // Fixed 16:9
+          aspectRatio: aspectRatio,
         }
       }
     });
@@ -104,7 +105,8 @@ export const generateCreativeImage = async (
 export const refineImage = async (
   originalImageBase64: string,
   feedback: string,
-  referenceImageBase64?: string | null
+  referenceImageBase64?: string | null,
+  aspectRatio: PortraitAspectRatio = PortraitAspectRatio.WIDE
 ): Promise<string> => {
   try {
     const apiKey = getApiKey();
@@ -166,7 +168,7 @@ export const refineImage = async (
       config: {
         imageConfig: {
           imageSize: '1K',
-          aspectRatio: '16:9',
+          aspectRatio: aspectRatio,
         }
       }
     });
@@ -411,7 +413,8 @@ export const editImage = async (
   editPrompt: string,
   originalWidth: number,
   originalHeight: number,
-  referenceImageBase64?: string | null
+  referenceImageBase64?: string | null,
+  outputAspectRatio?: ImageEditorAspectRatio
 ): Promise<string> => {
   try {
     const apiKey = getApiKey();
@@ -471,19 +474,23 @@ IMPORTANT GUIDELINES:
 
     parts.push({ text: promptText });
 
-    // Determine aspect ratio from original dimensions
-    const ratio = originalWidth / originalHeight;
+    // Determine aspect ratio from original dimensions or use specified
     let aspectRatio: string;
-    if (ratio > 1.5) {
-      aspectRatio = '16:9';
-    } else if (ratio < 0.7) {
-      aspectRatio = '9:16';
-    } else if (ratio > 1.2) {
-      aspectRatio = '4:3';
-    } else if (ratio < 0.85) {
-      aspectRatio = '3:4';
+    if (outputAspectRatio && outputAspectRatio !== ImageEditorAspectRatio.ORIGINAL) {
+      aspectRatio = outputAspectRatio;
     } else {
-      aspectRatio = '1:1';
+      const ratio = originalWidth / originalHeight;
+      if (ratio > 1.5) {
+        aspectRatio = '16:9';
+      } else if (ratio < 0.7) {
+        aspectRatio = '9:16';
+      } else if (ratio > 1.2) {
+        aspectRatio = '4:3';
+      } else if (ratio < 0.85) {
+        aspectRatio = '3:4';
+      } else {
+        aspectRatio = '1:1';
+      }
     }
 
     const response = await ai.models.generateContent({

@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { UploadedFile, ImageStyle, GenerationState } from '../types';
+import { UploadedFile, ImageStyle, GenerationState, PortraitAspectRatio } from '../types';
 import { STYLE_OPTIONS } from '../constants';
 import { generateCreativeImage, fileToBase64, refineImage } from '../services/geminiService';
 import { Dropzone } from './Dropzone';
 import { Button } from './Button';
 import { Sparkles, Download, AlertCircle, MessageSquarePlus, Wand2, ImagePlus, X } from 'lucide-react';
+
+const ASPECT_RATIO_OPTIONS = [
+  { id: PortraitAspectRatio.WIDE, label: '16:9 (横長)', description: 'YouTubeサムネ、映画風' },
+  { id: PortraitAspectRatio.STANDARD, label: '4:3 (標準)', description: '一般的な横長写真' },
+  { id: PortraitAspectRatio.SQUARE, label: '1:1 (正方形)', description: 'Instagram、SNSアイコン' },
+  { id: PortraitAspectRatio.PORTRAIT, label: '3:4 (縦長)', description: 'ポートレート、プロフィール写真' },
+  { id: PortraitAspectRatio.VERTICAL, label: '9:16 (縦長)', description: 'スマホ壁紙、TikTok、ストーリーズ' },
+];
 
 interface PortraitGeneratorProps {
   onApiError: () => void;
@@ -15,6 +23,7 @@ const PortraitGenerator: React.FC<PortraitGeneratorProps> = ({ onApiError }) => 
   const [personImage, setPersonImage] = useState<UploadedFile | null>(null);
   const [bgImage, setBgImage] = useState<UploadedFile | null>(null);
   const [style, setStyle] = useState<ImageStyle>(ImageStyle.CINEMATIC);
+  const [aspectRatio, setAspectRatio] = useState<PortraitAspectRatio>(PortraitAspectRatio.WIDE);
   const [userPrompt, setUserPrompt] = useState<string>('');
 
   // Refinement State
@@ -69,7 +78,8 @@ const PortraitGenerator: React.FC<PortraitGeneratorProps> = ({ onApiError }) => 
         personImage?.base64 || null,
         bgImage?.base64 || null,
         style,
-        userPrompt
+        userPrompt,
+        aspectRatio
       );
 
       setGenState({
@@ -110,7 +120,8 @@ const PortraitGenerator: React.FC<PortraitGeneratorProps> = ({ onApiError }) => 
       const resultBase64 = await refineImage(
         previousImage,
         feedbackPrompt,
-        feedbackImage?.base64 || null
+        feedbackImage?.base64 || null,
+        aspectRatio
       );
 
       setGenState({
@@ -209,6 +220,28 @@ const PortraitGenerator: React.FC<PortraitGeneratorProps> = ({ onApiError }) => 
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* 2.5 Aspect Ratio Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-300">④ 出力サイズ</label>
+            <select
+              value={aspectRatio}
+              onChange={(e) => setAspectRatio(e.target.value as PortraitAspectRatio)}
+              className="w-full bg-surface-900 border border-surface-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer appearance-none"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                backgroundPosition: 'right 0.75rem center',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: '1.25em 1.25em',
+              }}
+            >
+              {ASPECT_RATIO_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label} - {opt.description}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* 3. Text Prompt */}

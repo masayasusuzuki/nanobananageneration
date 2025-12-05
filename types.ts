@@ -71,6 +71,25 @@ export enum ImageGenAspectRatio {
   PORTRAIT = '3:4',
 }
 
+// Portrait Generator Aspect Ratio
+export enum PortraitAspectRatio {
+  WIDE = '16:9',
+  STANDARD = '4:3',
+  SQUARE = '1:1',
+  VERTICAL = '9:16',
+  PORTRAIT = '3:4',
+}
+
+// Image Editor Aspect Ratio
+export enum ImageEditorAspectRatio {
+  ORIGINAL = 'original',
+  WIDE = '16:9',
+  STANDARD = '4:3',
+  SQUARE = '1:1',
+  VERTICAL = '9:16',
+  PORTRAIT = '3:4',
+}
+
 export interface LPGenerationState {
   isLoading: boolean;
   resultImage: string | null;

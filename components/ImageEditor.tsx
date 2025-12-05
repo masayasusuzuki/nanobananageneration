@@ -3,6 +3,16 @@ import { Dropzone } from './Dropzone';
 import { Button } from './Button';
 import { fileToBase64, editImage } from '../services/geminiService';
 import { Download, Wand2, AlertCircle, RotateCcw, MessageSquarePlus, ImagePlus, X } from 'lucide-react';
+import { ImageEditorAspectRatio } from '../types';
+
+const ASPECT_RATIO_OPTIONS = [
+  { id: ImageEditorAspectRatio.ORIGINAL, label: '元画像に合わせる', description: '元のアスペクト比を維持' },
+  { id: ImageEditorAspectRatio.WIDE, label: '16:9 (横長)', description: 'YouTubeサムネ、映画風' },
+  { id: ImageEditorAspectRatio.STANDARD, label: '4:3 (標準)', description: '一般的な横長写真' },
+  { id: ImageEditorAspectRatio.SQUARE, label: '1:1 (正方形)', description: 'Instagram、SNSアイコン' },
+  { id: ImageEditorAspectRatio.PORTRAIT, label: '3:4 (縦長)', description: 'ポートレート、プロフィール写真' },
+  { id: ImageEditorAspectRatio.VERTICAL, label: '9:16 (縦長)', description: 'スマホ壁紙、TikTok、ストーリーズ' },
+];
 
 interface ImageEditorProps {
   onApiError?: () => void;
@@ -28,6 +38,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ onApiError }) => {
 
   // History for multiple edits
   const [editHistory, setEditHistory] = useState<string[]>([]);
+
+  // Aspect ratio
+  const [outputAspectRatio, setOutputAspectRatio] = useState<ImageEditorAspectRatio>(ImageEditorAspectRatio.ORIGINAL);
 
   // Refinement state
   const [showRefinement, setShowRefinement] = useState(false);
@@ -85,7 +98,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ onApiError }) => {
         sourceImage,
         editPrompt,
         originalDimensions.width,
-        originalDimensions.height
+        originalDimensions.height,
+        undefined,
+        outputAspectRatio
       );
 
       // Save current state to history before updating
@@ -159,7 +174,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ onApiError }) => {
         refinementPrompt,
         originalDimensions.width,
         originalDimensions.height,
-        referenceImage
+        referenceImage,
+        outputAspectRatio
       );
 
       setResultImage(result);
@@ -221,9 +237,32 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ onApiError }) => {
               value={editPrompt}
               onChange={(e) => setEditPrompt(e.target.value)}
               placeholder="どんな編集をしたいか指示してください...&#10;&#10;例:&#10;・背景を青い空に変更&#10;・明るさを上げてコントラストを強調&#10;・人物の服の色を赤に変更&#10;・不要な物体を削除&#10;・写真をアニメ調に変換"
-              className="w-full h-40 bg-surface-950 border border-surface-700 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+              className="w-full h-32 bg-surface-950 border border-surface-700 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
               disabled={!originalImage || isLoading}
             />
+
+            {/* Aspect Ratio Selection */}
+            <div className="mt-4 space-y-2">
+              <label className="text-sm font-medium text-slate-300">出力サイズ</label>
+              <select
+                value={outputAspectRatio}
+                onChange={(e) => setOutputAspectRatio(e.target.value as ImageEditorAspectRatio)}
+                className="w-full bg-surface-950 border border-surface-700 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.75rem center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '1.25em 1.25em',
+                }}
+                disabled={!originalImage || isLoading}
+              >
+                {ASPECT_RATIO_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label} - {opt.description}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="mt-4 space-y-2">
               <Button
                 onClick={handleEdit}
