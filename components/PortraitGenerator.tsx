@@ -15,7 +15,7 @@ const ASPECT_RATIO_OPTIONS = [
 ];
 
 interface PortraitGeneratorProps {
-  onApiError: () => void;
+  onApiError?: () => void;
 }
 
 const PortraitGenerator: React.FC<PortraitGeneratorProps> = ({ onApiError }) => {
@@ -147,7 +147,7 @@ const PortraitGenerator: React.FC<PortraitGeneratorProps> = ({ onApiError }) => 
         error: "APIのレート制限に達しました。しばらく待ってから再試行してください。（無料プランは1分あたりの制限があります）"
       }));
     } else if (errorMessage.includes("Requested entity was not found") || errorMessage.includes("403") || errorMessage.includes("Permission denied") || errorMessage.includes("API key not valid")) {
-      onApiError();
+      onApiError?.();
       setGenState(prev => ({
         ...prev,
         isLoading: false,

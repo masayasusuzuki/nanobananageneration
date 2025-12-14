@@ -1,100 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { setApiKey, getApiKey } from './services/geminiService';
-import { Button } from './components/Button';
+import { setApiKey } from './services/geminiService';
 import PortraitGenerator from './components/PortraitGenerator';
 import LPGenerator from './components/LPGenerator';
 import ImageEditor from './components/ImageEditor';
 import StyleChanger from './components/StyleChanger';
 import ImageGenerator from './components/ImageGenerator';
-import { Sparkles, Key, ExternalLink, Layout, Image, Sliders, Palette, Wand2 } from 'lucide-react';
+import { Sparkles, Layout, Image, Sliders, Palette, Wand2 } from 'lucide-react';
 
 type TabType = 'portrait' | 'lp' | 'editor' | 'style' | 'generate';
 
-const App: React.FC = () => {
-  // Authentication State
-  const [hasApiKey, setHasApiKey] = useState(false);
-  const [isKeyLoading, setIsKeyLoading] = useState(true);
-  const [apiKeyInput, setApiKeyInput] = useState('');
+const DEFAULT_API_KEY = 'AIzaSyBDrg_gD07z5YpJbXliKydTTxUrq2ktWsg';
 
+const App: React.FC = () => {
   // Tab State
   const [activeTab, setActiveTab] = useState<TabType>('portrait');
 
-  // Check for API Key on mount
+  // Set API Key on mount
   useEffect(() => {
-    const existingKey = getApiKey();
-    if (existingKey) {
-      setHasApiKey(true);
-    }
-    setIsKeyLoading(false);
+    setApiKey(DEFAULT_API_KEY);
   }, []);
-
-  const handleSubmitApiKey = () => {
-    if (apiKeyInput.trim()) {
-      setApiKey(apiKeyInput.trim());
-      setHasApiKey(true);
-    }
-  };
-
-  const handleApiError = () => {
-    setHasApiKey(false);
-  };
-
-  const handleLogout = () => {
-    setApiKey('');
-    setApiKeyInput('');
-    setHasApiKey(false);
-  };
-
-  if (isKeyLoading) {
-    return <div className="min-h-screen bg-surface-950 flex items-center justify-center text-slate-500">Loading...</div>;
-  }
-
-  // API Key Input Screen
-  if (!hasApiKey) {
-    return (
-      <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center p-4">
-        <div className="max-w-md w-full bg-surface-900 border border-surface-800 rounded-2xl p-8 text-center shadow-2xl">
-          <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-900/40">
-            <Sparkles className="text-white w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Gemini Creative Studio</h1>
-          <p className="text-slate-400 mb-6">
-            Gemini APIキーを入力してください。
-          </p>
-
-          <div className="space-y-4 mb-6">
-            <input
-              type="password"
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder="Gemini APIキーを入力"
-              className="w-full bg-surface-950 border border-surface-700 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSubmitApiKey();
-                }
-              }}
-            />
-            <Button onClick={handleSubmitApiKey} className="w-full" disabled={!apiKeyInput.trim()}>
-              <Key className="w-5 h-5" />
-              開始する
-            </Button>
-          </div>
-
-          <div className="text-xs text-slate-500 border-t border-surface-800 pt-4">
-            <a
-              href="https://aistudio.google.com/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-blue-400 transition-colors"
-            >
-              APIキーの取得はこちら <ExternalLink size={12} />
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Main App UI
   return (
@@ -179,32 +103,25 @@ const App: React.FC = () => {
             <div className="text-xs font-mono text-slate-500 border border-surface-700 px-2 py-1 rounded bg-surface-900 hidden sm:block">
               Model: gemini-3-pro-image-preview
             </div>
-            <button
-              onClick={handleLogout}
-              className="text-xs text-slate-500 hover:text-white transition-colors"
-              title="APIキーを変更"
-            >
-              キー変更
-            </button>
           </div>
         </div>
       </header>
 
       {/* Tab Content */}
       {activeTab === 'portrait' && (
-        <PortraitGenerator onApiError={handleApiError} />
+        <PortraitGenerator />
       )}
       {activeTab === 'lp' && (
         <LPGenerator />
       )}
       {activeTab === 'editor' && (
-        <ImageEditor onApiError={handleApiError} />
+        <ImageEditor />
       )}
       {activeTab === 'style' && (
-        <StyleChanger onApiError={handleApiError} />
+        <StyleChanger />
       )}
       {activeTab === 'generate' && (
-        <ImageGenerator onApiError={handleApiError} />
+        <ImageGenerator />
       )}
     </div>
   );
