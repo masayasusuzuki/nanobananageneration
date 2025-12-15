@@ -5,7 +5,7 @@ import LPGenerator from './components/LPGenerator';
 import ImageEditor from './components/ImageEditor';
 import StyleChanger from './components/StyleChanger';
 import ImageGenerator from './components/ImageGenerator';
-import { Sparkles, Layout, Image, Sliders, Palette, Wand2, Key } from 'lucide-react';
+import { Sparkles, Layout, Image, Sliders, Palette, Wand2, Key, Settings, X } from 'lucide-react';
 
 type TabType = 'portrait' | 'lp' | 'editor' | 'style' | 'generate';
 
@@ -16,6 +16,8 @@ const App: React.FC = () => {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [isApiKeySet, setIsApiKeySet] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  // Settings Modal State
+  const [showSettings, setShowSettings] = useState(false);
 
   // Check for existing API key on mount
   useEffect(() => {
@@ -32,7 +34,17 @@ const App: React.FC = () => {
     if (apiKeyInput.trim()) {
       setApiKey(apiKeyInput.trim());
       setIsApiKeySet(true);
+      setShowSettings(false);
+      setApiKeyInput('');
     }
+  };
+
+  // Handle API key clear
+  const handleClearApiKey = () => {
+    setApiKey('');
+    setIsApiKeySet(false);
+    setShowSettings(false);
+    setApiKeyInput('');
   };
 
   // Loading state
@@ -193,9 +205,84 @@ const App: React.FC = () => {
             <div className="text-xs font-mono text-slate-500 border border-surface-700 px-2 py-1 rounded bg-surface-900 hidden sm:block">
               Model: gemini-3-pro-image-preview
             </div>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 rounded-lg border border-surface-700 bg-surface-900 hover:bg-surface-800 text-slate-400 hover:text-white transition-all"
+              title="API設定"
+            >
+              <Settings size={18} />
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface-900 border border-surface-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Key size={20} />
+                API設定
+              </h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="p-1 rounded-lg hover:bg-surface-800 text-slate-400 hover:text-white transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleApiKeySubmit} className="space-y-4">
+              <div>
+                <label htmlFor="apiKeySettings" className="block text-sm font-medium text-slate-300 mb-2">
+                  新しいAPIキー
+                </label>
+                <input
+                  type="password"
+                  id="apiKeySettings"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full px-4 py-3 bg-surface-800 border border-surface-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={!apiKeyInput.trim()}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-surface-700 disabled:to-surface-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-all duration-200"
+                >
+                  保存
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearApiKey}
+                  className="py-3 px-4 bg-red-600/20 hover:bg-red-600/30 text-red-400 font-medium rounded-lg transition-all duration-200 border border-red-600/30"
+                >
+                  削除
+                </button>
+              </div>
+            </form>
+
+            <div className="mt-4 p-3 bg-surface-800/50 rounded-lg border border-surface-700">
+              <p className="text-xs text-slate-400">
+                APIキーは
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 underline mx-1"
+                >
+                  Google AI Studio
+                </a>
+                から取得できます。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab Content */}
       {activeTab === 'portrait' && (
