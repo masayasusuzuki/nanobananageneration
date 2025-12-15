@@ -162,15 +162,40 @@ const PortraitGenerator: React.FC<PortraitGeneratorProps> = ({ onApiError }) => 
     }
   };
 
-  const handleDownload = () => {
-    if (genState.resultImage) {
-      const link = document.createElement('a');
-      link.href = genState.resultImage;
-      link.download = `gemini-generated-${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+  const handleDownload = async () => {
+    if (!genState.resultImage) return;
+
+    // Create an image element to load the base64 data
+    const img = new Image();
+    img.src = genState.resultImage;
+
+    await new Promise((resolve) => {
+      img.onload = resolve;
+    });
+
+    // Create canvas and draw the image
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Fill with white background (for transparency)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the image
+    ctx.drawImage(img, 0, 0);
+
+    // Convert to JPEG with high quality
+    const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+    const link = document.createElement('a');
+    link.href = jpegDataUrl;
+    link.download = `gemini-generated-${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
