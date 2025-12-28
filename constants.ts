@@ -1,4 +1,4 @@
-import { ImageStyle, LPSection, LPTone, LPAspectRatio, StyleChangeType, StyleChangeAspectRatio, ImageGenAspectRatio } from './types';
+import { ImageStyle, LPSection, LPTone, LPAspectRatio, StyleChangeType, StyleChangeAspectRatio, ImageGenAspectRatio, SlidePageType, SlideAspectRatio, SlideGenerationMode } from './types';
 
 export const STYLE_OPTIONS = [
   { id: ImageStyle.REALISTIC, label: 'リアル / 写真', description: '写実的な写真品質' },
@@ -77,3 +77,26 @@ export const IMAGE_GEN_ASPECT_RATIO_OPTIONS = [
   { id: ImageGenAspectRatio.VERTICAL, label: '縦長 (9:16)', description: 'スマホ向け縦長フォーマット' },
   { id: ImageGenAspectRatio.PORTRAIT, label: 'ポートレート (3:4)', description: 'ポートレート向け縦長' },
 ];
+
+// Slide Generator Options
+export const SLIDE_PAGE_TYPE_OPTIONS = [
+  { id: SlidePageType.TITLE, label: 'タイトルスライド', description: '大きなコピーを表示するタイトルページ' },
+  { id: SlidePageType.CONTENT, label: 'コンテンツスライド', description: '情報を整理して表示するコンテンツページ' },
+];
+
+export const SLIDE_ASPECT_RATIO_OPTIONS = [
+  { id: SlideAspectRatio.WIDE, label: 'ワイド (16:9)', description: '標準的なプレゼンテーション向け' },
+  { id: SlideAspectRatio.STANDARD, label: 'スタンダード (4:3)', description: 'クラシックなプレゼンテーション向け' },
+];
+
+export const SLIDE_GENERATION_MODE_OPTIONS = [
+  { id: SlideGenerationMode.ALL_AT_ONCE, label: '一括生成', description: 'すべてのスライドを一度に生成' },
+  { id: SlideGenerationMode.ONE_BY_ONE, label: '1ページずつ生成', description: '確認しながら順番に生成' },
+];
+
+export const SLIDE_LIMITS = {
+  MAX_INITIAL_PAGES: 10,
+  PAGES_PER_BATCH: 5,
+  MAX_TOTAL_PAGES: 50,
+  TEMPLATE_COUNT: 3,
+};

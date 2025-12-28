@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { MODEL_NAME } from '../constants';
-import { ImageStyle, LPSection, LPTone, LPAspectRatio, StyleChangeType, StyleChangeAspectRatio, ImageGenAspectRatio, PortraitAspectRatio, ImageEditorAspectRatio } from '../types';
+import { ImageStyle, LPSection, LPTone, LPAspectRatio, StyleChangeType, StyleChangeAspectRatio, ImageGenAspectRatio, PortraitAspectRatio, ImageEditorAspectRatio, SlidePageType, SlideAspectRatio } from '../types';
 
 // API Key storage
 const API_KEY_STORAGE_KEY = 'gemini_api_key';
@@ -859,4 +859,238 @@ const processResponse = (response: any): string => {
     }
     throw new Error("No image data found in response.");
   }
+};
+
+// Slide Generator Functions
+
+// Generate design templates based on user prompt
+export const generateSlideTemplates = async (
+  themePrompt: string,
+  aspectRatio: SlideAspectRatio,
+  templateCount: number = 3
+): Promise<{ id: string; imageBase64: string; description: string }[]> => {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("APIキーが設定されていません。");
+  }
+  const ai = new GoogleGenAI({ apiKey });
+
+  const templates: { id: string; imageBase64: string; description: string }[] = [];
+
+  for (let i = 0; i < templateCount; i++) {
+    const promptText = `Generate a presentation slide design template based on this theme: "${themePrompt}"
+
+TEMPLATE VARIATION: ${i + 1} of ${templateCount}
+Create a UNIQUE design variation that differs from other templates.
+
+REQUIREMENTS:
+- This is a DESIGN TEMPLATE showing the visual style, color palette, typography, and layout
+- Show a sample title slide with placeholder text like "Title Goes Here" and "Subtitle"
+- The design should be professional and suitable for business presentations
+- Include decorative elements, backgrounds, and styling that define this template
+- Each template should have a distinctly different visual approach
+
+DESIGN ELEMENTS TO INCLUDE:
+- Background style (solid, gradient, pattern, image-based)
+- Color scheme (primary, secondary, accent colors)
+- Typography style (font pairing suggestions shown visually)
+- Layout structure (header placement, content areas)
+- Decorative elements (shapes, lines, icons style)
+
+OUTPUT: A single slide image showing this template design.`;
+
+    try {
+      const response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: { parts: [{ text: promptText }] },
+        config: {
+          imageConfig: {
+            imageSize: '1K',
+            aspectRatio: aspectRatio,
+          }
+        }
+      });
+
+      const imageBase64 = processResponse(response);
+      templates.push({
+        id: `template-${Date.now()}-${i}`,
+        imageBase64,
+        description: `テンプレート ${i + 1}`
+      });
+    } catch (error) {
+      console.error(`Template ${i + 1} generation failed:`, error);
+    }
+  }
+
+  if (templates.length === 0) {
+    throw new Error("テンプレートの生成に失敗しました。");
+  }
+
+  return templates;
+};
+
+// Generate a single slide page
+export const generateSlidePage = async (
+  pagePrompt: string,
+  pageType: SlidePageType,
+  templateImageBase64: string,
+  aspectRatio: SlideAspectRatio,
+  existingSlides: string[] = [],
+  pageNumber: number
+): Promise<string> => {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("APIキーが設定されていません。");
+  }
+  const ai = new GoogleGenAI({ apiKey });
+
+  const parts: any[] = [];
+
+  // Add template as style reference
+  const templateBase64 = templateImageBase64.includes(',')
+    ? templateImageBase64.split(',')[1]
+    : templateImageBase64;
+
+  parts.push({
+    inlineData: {
+      mimeType: 'image/png',
+      data: templateBase64
+    }
+  });
+
+  // Add existing slides for consistency (up to last 2 for context)
+  const recentSlides = existingSlides.slice(-2);
+  recentSlides.forEach((slide) => {
+    const slideBase64 = slide.includes(',') ? slide.split(',')[1] : slide;
+    parts.push({
+      inlineData: {
+        mimeType: 'image/png',
+        data: slideBase64
+      }
+    });
+  });
+
+  const pageTypeDescriptions: Record<SlidePageType, string> = {
+    [SlidePageType.TITLE]: `TITLE SLIDE: Create a visually impactful title page.
+- Large, prominent headline text
+- Optional subtitle or tagline
+- Minimal content, maximum visual impact
+- Strong use of template's decorative elements`,
+    [SlidePageType.CONTENT]: `CONTENT SLIDE: Create an organized information display page.
+- Clear hierarchy of information
+- Bullet points or numbered lists if appropriate
+- Supporting visuals or icons
+- Balanced layout with good readability`
+  };
+
+  let promptText = `Generate a presentation slide image.
+
+DESIGN TEMPLATE: The first image is the DESIGN TEMPLATE. You MUST match:
+- Exact color palette and scheme
+- Typography style and font appearance
+- Background style and decorative elements
+- Overall visual aesthetic and mood
+
+${recentSlides.length > 0 ? `EXISTING SLIDES: The next ${recentSlides.length} image(s) are previous slides from the same presentation. Ensure visual consistency.` : ''}
+
+PAGE NUMBER: ${pageNumber}
+PAGE TYPE: ${pageTypeDescriptions[pageType]}
+
+CONTENT TO DISPLAY:
+${pagePrompt}
+
+IMPORTANT:
+- Create a clean, professional slide
+- All text should be clearly readable
+- Follow the template's design language exactly
+- This slide should look like it belongs in the same deck as the template`;
+
+  parts.push({ text: promptText });
+
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: { parts: parts },
+    config: {
+      imageConfig: {
+        imageSize: '1K',
+        aspectRatio: aspectRatio,
+      }
+    }
+  });
+
+  return processResponse(response);
+};
+
+// Regenerate a single slide with optional prompt modification
+export const regenerateSlidePage = async (
+  originalImageBase64: string,
+  newPrompt: string,
+  pageType: SlidePageType,
+  templateImageBase64: string,
+  aspectRatio: SlideAspectRatio,
+  feedbackOrChanges: string
+): Promise<string> => {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("APIキーが設定されていません。");
+  }
+  const ai = new GoogleGenAI({ apiKey });
+
+  const parts: any[] = [];
+
+  // Add template
+  const templateBase64 = templateImageBase64.includes(',')
+    ? templateImageBase64.split(',')[1]
+    : templateImageBase64;
+  parts.push({
+    inlineData: {
+      mimeType: 'image/png',
+      data: templateBase64
+    }
+  });
+
+  // Add original slide
+  const originalBase64 = originalImageBase64.includes(',')
+    ? originalImageBase64.split(',')[1]
+    : originalImageBase64;
+  parts.push({
+    inlineData: {
+      mimeType: 'image/png',
+      data: originalBase64
+    }
+  });
+
+  const promptText = `Regenerate this presentation slide.
+
+TEMPLATE: The first image is the DESIGN TEMPLATE to follow.
+ORIGINAL SLIDE: The second image is the current version of this slide.
+
+PAGE TYPE: ${pageType === SlidePageType.TITLE ? 'Title Slide' : 'Content Slide'}
+
+UPDATED CONTENT:
+${newPrompt}
+
+FEEDBACK/CHANGES REQUESTED:
+${feedbackOrChanges}
+
+INSTRUCTIONS:
+- Maintain the template's design language
+- Apply the requested changes
+- Improve upon the original while keeping the core content
+- Ensure text is readable and layout is clean`;
+
+  parts.push({ text: promptText });
+
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: { parts: parts },
+    config: {
+      imageConfig: {
+        imageSize: '1K',
+        aspectRatio: aspectRatio,
+      }
+    }
+  });
+
+  return processResponse(response);
 };

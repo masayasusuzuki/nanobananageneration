@@ -108,6 +108,51 @@ export interface UploadedFile {
   base64: string;
 }
 
+// Slide Generator Types
+export enum SlidePageType {
+  TITLE = 'title',
+  CONTENT = 'content',
+}
+
+export enum SlideWorkflowPhase {
+  TEMPLATE_GENERATION = 'template_generation',
+  TEMPLATE_SELECTION = 'template_selection',
+  PAGE_SETUP = 'page_setup',
+  GENERATION = 'generation',
+  EDITING = 'editing',
+}
+
+export enum SlideGenerationMode {
+  ALL_AT_ONCE = 'all_at_once',
+  ONE_BY_ONE = 'one_by_one',
+}
+
+export enum SlideAspectRatio {
+  WIDE = '16:9',
+  STANDARD = '4:3',
+}
+
+export interface SlideTemplate {
+  id: string;
+  imageBase64: string;
+  description: string;
+}
+
+export interface SlidePage {
+  id: string;
+  pageNumber: number;
+  pageType: SlidePageType;
+  prompt: string;
+  generatedImage: string | null;
+  isGenerating: boolean;
+  error: string | null;
+}
+
+export interface SlideGenerationState {
+  isLoading: boolean;
+  error: string | null;
+}
+
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;

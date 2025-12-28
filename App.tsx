@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { setApiKey, getApiKey } from './services/geminiService';
 import PortraitGenerator from './components/PortraitGenerator';
-import LPGenerator from './components/LPGenerator';
-import ImageEditor from './components/ImageEditor';
 import StyleChanger from './components/StyleChanger';
 import ImageGenerator from './components/ImageGenerator';
-import { Sparkles, Layout, Image, Sliders, Palette, Wand2, Key, Settings, X } from 'lucide-react';
+import { Sparkles, Image, Palette, Wand2, Key, Settings, X } from 'lucide-react';
 
-type TabType = 'portrait' | 'lp' | 'editor' | 'style' | 'generate';
+type TabType = 'portrait' | 'style' | 'generate';
 
 const App: React.FC = () => {
   // Tab State
@@ -151,30 +149,6 @@ const App: React.FC = () => {
                 ポートレート
               </button>
               <button
-                onClick={() => setActiveTab('lp')}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200
-                  ${activeTab === 'lp'
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
-                    : 'text-slate-400 hover:text-white hover:bg-surface-800'}
-                `}
-              >
-                <Layout size={16} />
-                LP制作
-              </button>
-              <button
-                onClick={() => setActiveTab('editor')}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200
-                  ${activeTab === 'editor'
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
-                    : 'text-slate-400 hover:text-white hover:bg-surface-800'}
-                `}
-              >
-                <Sliders size={16} />
-                画像編集
-              </button>
-              <button
                 onClick={() => setActiveTab('style')}
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200
@@ -287,12 +261,6 @@ const App: React.FC = () => {
       {/* Tab Content */}
       {activeTab === 'portrait' && (
         <PortraitGenerator />
-      )}
-      {activeTab === 'lp' && (
-        <LPGenerator />
-      )}
-      {activeTab === 'editor' && (
-        <ImageEditor />
       )}
       {activeTab === 'style' && (
         <StyleChanger />
