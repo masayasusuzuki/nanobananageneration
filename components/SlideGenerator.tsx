@@ -588,14 +588,21 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
                   </button>
                 )}
               </div>
-              <textarea
-                value={page.prompt}
-                onChange={(e) => handleUpdatePage(page.id, { prompt: e.target.value })}
-                placeholder={page.pageType === SlidePageType.TITLE
-                  ? "タイトルとサブタイトルを入力..."
-                  : "スライドに表示する内容を入力..."}
-                className="w-full h-20 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={page.title}
+                  onChange={(e) => handleUpdatePage(page.id, { title: e.target.value })}
+                  placeholder={page.pageType === SlidePageType.TITLE ? "タイトル" : "見出し"}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <textarea
+                  value={page.content}
+                  onChange={(e) => handleUpdatePage(page.id, { content: e.target.value })}
+                  placeholder={page.pageType === SlidePageType.TITLE ? "サブタイトル（任意）" : "本文"}
+                  className="w-full h-16 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -641,7 +648,7 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
 
           <Button
             onClick={generationMode === SlideGenerationMode.ALL_AT_ONCE ? handleGenerateAll : handleGenerateOneByOne}
-            disabled={isGenerating || pages.every(p => !p.prompt.trim())}
+            disabled={isGenerating || pages.every(p => !hasPageContent(p))}
             variant="primary"
             className="w-full"
           >
@@ -877,15 +884,26 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    コンテンツ
+                    {editingPage.pageType === SlidePageType.TITLE ? 'タイトル' : '見出し'}
+                  </label>
+                  <input
+                    type="text"
+                    value={editingPage.title}
+                    onChange={(e) => handleUpdatePage(editingPage.id, { title: e.target.value })}
+                    placeholder={editingPage.pageType === SlidePageType.TITLE ? "タイトル" : "見出し"}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    {editingPage.pageType === SlidePageType.TITLE ? 'サブタイトル' : '本文'}
                   </label>
                   <textarea
-                    value={editingPage.prompt}
-                    onChange={(e) => handleUpdatePage(editingPage.id, { prompt: e.target.value })}
-                    placeholder={editingPage.pageType === SlidePageType.TITLE
-                      ? "タイトルとサブタイトルを入力..."
-                      : "スライドに表示する内容を入力..."}
-                    className="w-full h-24 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    value={editingPage.content}
+                    onChange={(e) => handleUpdatePage(editingPage.id, { content: e.target.value })}
+                    placeholder={editingPage.pageType === SlidePageType.TITLE ? "サブタイトル（任意）" : "本文"}
+                    className="w-full h-20 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
 
@@ -927,7 +945,7 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
                 ) : (
                   <Button
                     onClick={() => handleGenerateSinglePage(editingPage.id)}
-                    disabled={editingPage.isGenerating || !editingPage.prompt.trim()}
+                    disabled={editingPage.isGenerating || !hasPageContent(editingPage)}
                     variant="primary"
                     className="w-full"
                   >
