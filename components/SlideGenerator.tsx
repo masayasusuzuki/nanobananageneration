@@ -46,7 +46,8 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
         id: `page-${Date.now()}-${i}`,
         pageNumber: i + 1,
         pageType: i === 0 ? SlidePageType.TITLE : SlidePageType.CONTENT,
-        prompt: '',
+        title: '',
+        content: '',
         generatedImage: null,
         isGenerating: false,
         error: null,
@@ -98,7 +99,8 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
       id: `page-${Date.now()}`,
       pageNumber: pages.length + 1,
       pageType: SlidePageType.CONTENT,
-      prompt: '',
+      title: '',
+      content: '',
       generatedImage: null,
       isGenerating: false,
       error: null,
@@ -117,13 +119,28 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
         id: `page-${Date.now()}-${i}`,
         pageNumber: pages.length + i + 1,
         pageType: SlidePageType.CONTENT,
-        prompt: '',
+        title: '',
+        content: '',
         generatedImage: null,
         isGenerating: false,
         error: null,
       });
     }
     setPages([...pages, ...newPages]);
+  };
+
+  // Helper to build prompt from title and content
+  const buildPagePrompt = (page: SlidePage): string => {
+    if (page.pageType === SlidePageType.TITLE) {
+      return `タイトル: ${page.title}${page.content ? `\nサブタイトル: ${page.content}` : ''}`;
+    } else {
+      return `見出し: ${page.title}${page.content ? `\n\n本文:\n${page.content}` : ''}`;
+    }
+  };
+
+  // Check if page has content
+  const hasPageContent = (page: SlidePage): boolean => {
+    return page.title.trim() !== '' || page.content.trim() !== '';
   };
 
   // Remove page
@@ -145,9 +162,9 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
   const handleGenerateAll = async () => {
     if (!selectedTemplate) return;
 
-    const pagesToGenerate = pages.filter(p => p.prompt.trim());
+    const pagesToGenerate = pages.filter(p => hasPageContent(p));
     if (pagesToGenerate.length === 0) {
-      setError('少なくとも1ページにプロンプトを入力してください。');
+      setError('少なくとも1ページに内容を入力してください。');
       return;
     }
 
@@ -159,7 +176,7 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
 
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
-      if (!page.prompt.trim()) continue;
+      if (!hasPageContent(page)) continue;
 
       setCurrentGeneratingIndex(i);
       handleUpdatePage(page.id, { isGenerating: true, error: null });
@@ -168,8 +185,9 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
         const templateImage = page.pageType === SlidePageType.TITLE
           ? selectedTemplate.titleImageBase64
           : selectedTemplate.contentImageBase64;
+        const prompt = buildPagePrompt(page);
         const result = await generateSlidePage(
-          page.prompt,
+          prompt,
           page.pageType,
           templateImage,
           aspectRatio,
@@ -194,7 +212,7 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
   const handleGenerateOneByOne = async () => {
     if (!selectedTemplate) return;
 
-    const nextPage = pages.find(p => !p.generatedImage && p.prompt.trim());
+    const nextPage = pages.find(p => !p.generatedImage && hasPageContent(p));
     if (!nextPage) {
       setCurrentPhase(SlideWorkflowPhase.EDITING);
       return;
@@ -216,8 +234,9 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
       const templateImage = nextPage.pageType === SlidePageType.TITLE
         ? selectedTemplate.titleImageBase64
         : selectedTemplate.contentImageBase64;
+      const prompt = buildPagePrompt(nextPage);
       const result = await generateSlidePage(
-        nextPage.prompt,
+        prompt,
         nextPage.pageType,
         templateImage,
         aspectRatio,
@@ -235,9 +254,45 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
     setCurrentGeneratingIndex(null);
 
     // Check if more pages to generate
-    const remainingPages = pages.filter(p => !p.generatedImage && p.prompt.trim() && p.id !== nextPage.id);
+    const remainingPages = pages.filter(p => !p.generatedImage && hasPageContent(p) && p.id !== nextPage.id);
     if (remainingPages.length === 0) {
       setCurrentPhase(SlideWorkflowPhase.EDITING);
+    }
+  };
+
+  // Generate a single new page
+  const handleGenerateSinglePage = async (pageId: string) => {
+    if (!selectedTemplate) return;
+
+    const page = pages.find(p => p.id === pageId);
+    if (!page || !hasPageContent(page)) return;
+
+    handleUpdatePage(pageId, { isGenerating: true, error: null });
+
+    // Get existing slides for context
+    const existingSlides = pages
+      .filter(p => p.generatedImage && p.pageNumber < page.pageNumber)
+      .map(p => p.generatedImage!);
+
+    try {
+      const templateImage = page.pageType === SlidePageType.TITLE
+        ? selectedTemplate.titleImageBase64
+        : selectedTemplate.contentImageBase64;
+      const prompt = buildPagePrompt(page);
+      const result = await generateSlidePage(
+        prompt,
+        page.pageType,
+        templateImage,
+        aspectRatio,
+        existingSlides,
+        page.pageNumber
+      );
+
+      handleUpdatePage(pageId, { generatedImage: result, isGenerating: false });
+      setEditingPageId(null);
+    } catch (err: any) {
+      console.error('Generation error:', err);
+      handleUpdatePage(pageId, { error: err.message, isGenerating: false });
     }
   };
 
@@ -254,9 +309,10 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
       const templateImage = page.pageType === SlidePageType.TITLE
         ? selectedTemplate.titleImageBase64
         : selectedTemplate.contentImageBase64;
+      const prompt = buildPagePrompt(page);
       const result = await regenerateSlidePage(
         page.generatedImage,
-        page.prompt,
+        prompt,
         page.pageType,
         templateImage,
         aspectRatio,
@@ -700,13 +756,22 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
                   )}
                 </>
               ) : (
-                <div className="w-full aspect-video bg-surface-800 flex items-center justify-center">
+                <div
+                  className="w-full aspect-video bg-slate-800 flex items-center justify-center cursor-pointer hover:bg-slate-700 transition-colors"
+                  onClick={() => setEditingPageId(page.id)}
+                >
                   {page.isGenerating ? (
                     <Loader2 className="animate-spin text-slate-500" size={24} />
                   ) : page.error ? (
-                    <AlertCircle className="text-red-400" size={24} />
+                    <div className="text-center">
+                      <AlertCircle className="text-red-400 mx-auto mb-1" size={24} />
+                      <span className="text-red-400 text-xs">エラー</span>
+                    </div>
                   ) : (
-                    <span className="text-slate-500 text-sm">未生成</span>
+                    <div className="text-center">
+                      <Plus className="text-slate-500 mx-auto mb-1" size={24} />
+                      <span className="text-slate-500 text-xs">クリックして編集</span>
+                    </div>
                   )}
                 </div>
               )}
@@ -769,12 +834,25 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
             <div className="grid md:grid-cols-2 gap-6">
               {/* Preview */}
               <div>
-                {editingPage.generatedImage && (
+                {editingPage.generatedImage ? (
                   <img
                     src={editingPage.generatedImage}
                     alt={`Slide ${editingPage.pageNumber}`}
                     className="w-full rounded-lg"
                   />
+                ) : (
+                  <div className="w-full aspect-video bg-slate-800 rounded-lg flex flex-col items-center justify-center border border-slate-600">
+                    <p className="text-slate-400 text-sm mb-2">プレビュー</p>
+                    {selectedTemplate && (
+                      <img
+                        src={editingPage.pageType === SlidePageType.TITLE
+                          ? selectedTemplate.titleImageBase64
+                          : selectedTemplate.contentImageBase64}
+                        alt="Template preview"
+                        className="w-3/4 rounded opacity-50"
+                      />
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -804,40 +882,68 @@ const SlideGenerator: React.FC<SlideGeneratorProps> = ({ onApiError }) => {
                   <textarea
                     value={editingPage.prompt}
                     onChange={(e) => handleUpdatePage(editingPage.id, { prompt: e.target.value })}
+                    placeholder={editingPage.pageType === SlidePageType.TITLE
+                      ? "タイトルとサブタイトルを入力..."
+                      : "スライドに表示する内容を入力..."}
                     className="w-full h-24 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    修正指示（オプション）
-                  </label>
-                  <textarea
-                    value={editFeedback}
-                    onChange={(e) => setEditFeedback(e.target.value)}
-                    placeholder="例: 文字を大きく、色をもっと明るく..."
-                    className="w-full h-20 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
+                {/* Show feedback field only for regeneration */}
+                {editingPage.generatedImage && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      修正指示（オプション）
+                    </label>
+                    <textarea
+                      value={editFeedback}
+                      onChange={(e) => setEditFeedback(e.target.value)}
+                      placeholder="例: 文字を大きく、色をもっと明るく..."
+                      className="w-full h-20 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
 
-                <Button
-                  onClick={() => handleRegeneratePage(editingPage.id)}
-                  disabled={editingPage.isGenerating}
-                  variant="primary"
-                  className="w-full"
-                >
-                  {editingPage.isGenerating ? (
-                    <>
-                      <Loader2 className="animate-spin" size={16} />
-                      再生成中...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw size={16} />
-                      再生成
-                    </>
-                  )}
-                </Button>
+                {/* Show Generate or Regenerate button based on state */}
+                {editingPage.generatedImage ? (
+                  <Button
+                    onClick={() => handleRegeneratePage(editingPage.id)}
+                    disabled={editingPage.isGenerating}
+                    variant="primary"
+                    className="w-full"
+                  >
+                    {editingPage.isGenerating ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} />
+                        再生成中...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={16} />
+                        再生成
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => handleGenerateSinglePage(editingPage.id)}
+                    disabled={editingPage.isGenerating || !editingPage.prompt.trim()}
+                    variant="primary"
+                    className="w-full"
+                  >
+                    {editingPage.isGenerating ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} />
+                        生成中...
+                      </>
+                    ) : (
+                      <>
+                        <Presentation size={16} />
+                        スライドを生成
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           </div>

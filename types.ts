@@ -143,7 +143,8 @@ export interface SlidePage {
   id: string;
   pageNumber: number;
   pageType: SlidePageType;
-  prompt: string;
+  title: string;
+  content: string;
   generatedImage: string | null;
   isGenerating: boolean;
   error: string | null;
