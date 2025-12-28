@@ -868,41 +868,65 @@ export const generateSlideTemplates = async (
   themePrompt: string,
   aspectRatio: SlideAspectRatio,
   templateCount: number = 3
-): Promise<{ id: string; imageBase64: string; description: string }[]> => {
+): Promise<{ id: string; titleImageBase64: string; contentImageBase64: string; description: string }[]> => {
   const apiKey = getApiKey();
   if (!apiKey) {
     throw new Error("APIキーが設定されていません。");
   }
   const ai = new GoogleGenAI({ apiKey });
 
-  const templates: { id: string; imageBase64: string; description: string }[] = [];
+  const templates: { id: string; titleImageBase64: string; contentImageBase64: string; description: string }[] = [];
 
   for (let i = 0; i < templateCount; i++) {
-    const promptText = `Generate a presentation slide design template based on this theme: "${themePrompt}"
+    // Generate title slide template
+    const titlePromptText = `Generate a presentation TITLE SLIDE design template based on this theme: "${themePrompt}"
 
 TEMPLATE VARIATION: ${i + 1} of ${templateCount}
 Create a UNIQUE design variation that differs from other templates.
 
 REQUIREMENTS:
-- This is a DESIGN TEMPLATE showing the visual style, color palette, typography, and layout
-- Show a sample title slide with placeholder text like "Title Goes Here" and "Subtitle"
+- This is a TITLE SLIDE template with large, prominent headline
+- Include placeholder text: "Title Goes Here" as main headline and "Subtitle" below
 - The design should be professional and suitable for business presentations
-- Include decorative elements, backgrounds, and styling that define this template
-- Each template should have a distinctly different visual approach
+- Maximum visual impact with minimal content
+- Strong use of decorative elements, backgrounds, and styling
 
 DESIGN ELEMENTS TO INCLUDE:
-- Background style (solid, gradient, pattern, image-based)
-- Color scheme (primary, secondary, accent colors)
-- Typography style (font pairing suggestions shown visually)
-- Layout structure (header placement, content areas)
-- Decorative elements (shapes, lines, icons style)
+- Bold, eye-catching background (gradient, image, or pattern)
+- Large, prominent typography for title
+- Elegant subtitle placement
+- Decorative elements (shapes, lines, accents)
+- Color scheme that defines this template
 
-OUTPUT: A single slide image showing this template design.`;
+OUTPUT: A single TITLE slide image.`;
+
+    // Generate content slide template
+    const contentPromptText = `Generate a presentation CONTENT SLIDE design template based on this theme: "${themePrompt}"
+
+TEMPLATE VARIATION: ${i + 1} of ${templateCount}
+This MUST match the same visual style as the title slide for this template.
+
+REQUIREMENTS:
+- This is a CONTENT SLIDE template showing organized information layout
+- Include placeholder text: "Section Title" as header and bullet points with "Content item 1", "Content item 2", "Content item 3"
+- The design should match the title slide's color palette and visual style
+- Clear hierarchy of information with good readability
+- Balanced layout suitable for text and bullet points
+
+DESIGN ELEMENTS TO INCLUDE:
+- Consistent background style (matching title slide)
+- Clear content area with readable typography
+- Bullet point or numbered list styling
+- Header/title area for section name
+- Same color scheme and decorative elements as title slide
+
+OUTPUT: A single CONTENT slide image.`;
 
     try {
-      const response = await ai.models.generateContent({
+      // Generate title slide
+      const titleResponse = await ai.models.generateContent({
         model: MODEL_NAME,
-        contents: { parts: [{ text: promptText }] },
+        contents: { parts: [{ text: titlePromptText }] },
         config: {
           imageConfig: {
             imageSize: '1K',
@@ -910,11 +934,25 @@ OUTPUT: A single slide image showing this template design.`;
           }
         }
       });
+      const titleImageBase64 = processResponse(titleResponse);
 
-      const imageBase64 = processResponse(response);
+      // Generate content slide
+      const contentResponse = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: { parts: [{ text: contentPromptText }] },
+        config: {
+          imageConfig: {
+            imageSize: '1K',
+            aspectRatio: aspectRatio,
+          }
+        }
+      });
+      const contentImageBase64 = processResponse(contentResponse);
+
       templates.push({
         id: `template-${Date.now()}-${i}`,
-        imageBase64,
+        titleImageBase64,
+        contentImageBase64,
         description: `テンプレート ${i + 1}`
       });
     } catch (error) {

@@ -134,7 +134,8 @@ export enum SlideAspectRatio {
 
 export interface SlideTemplate {
   id: string;
-  imageBase64: string;
+  titleImageBase64: string;
+  contentImageBase64: string;
   description: string;
 }
 

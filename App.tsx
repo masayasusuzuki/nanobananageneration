@@ -3,9 +3,10 @@ import { setApiKey, getApiKey } from './services/geminiService';
 import PortraitGenerator from './components/PortraitGenerator';
 import StyleChanger from './components/StyleChanger';
 import ImageGenerator from './components/ImageGenerator';
-import { Sparkles, Image, Palette, Wand2, Key, Settings, X } from 'lucide-react';
+import SlideGenerator from './components/SlideGenerator';
+import { Sparkles, Image, Palette, Wand2, Presentation, Key, Settings, X } from 'lucide-react';
 
-type TabType = 'portrait' | 'style' | 'generate';
+type TabType = 'portrait' | 'style' | 'generate' | 'slide';
 
 const App: React.FC = () => {
   // Tab State
@@ -172,6 +173,18 @@ const App: React.FC = () => {
                 <Wand2 size={16} />
                 画像生成
               </button>
+              <button
+                onClick={() => setActiveTab('slide')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200
+                  ${activeTab === 'slide'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/30'
+                    : 'text-slate-400 hover:text-white hover:bg-surface-800'}
+                `}
+              >
+                <Presentation size={16} />
+                スライド制作
+              </button>
             </nav>
           </div>
 
@@ -267,6 +280,9 @@ const App: React.FC = () => {
       )}
       {activeTab === 'generate' && (
         <ImageGenerator />
+      )}
+      {activeTab === 'slide' && (
+        <SlideGenerator />
       )}
     </div>
   );
